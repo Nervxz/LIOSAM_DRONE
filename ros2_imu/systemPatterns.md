@@ -1,0 +1,1 @@
+# System Patterns\n\n## Architecture\n- Modular design for easy integration.\n\n## Key Technical Decisions\n- Use of ROS2 middleware for communication.\n\n## Design Patterns\n- Observer pattern for data updates.
