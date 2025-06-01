@@ -1,0 +1,1 @@
+# Project Brief\n\n## Project Title: ROS2 IMU\n\n### Core Requirements\n- Define the functionality of the IMU system.\n- Ensure compatibility with ROS2.\n\n### Goals\n- Provide accurate IMU data.\n- Integrate seamlessly with existing ROS2 systems.
