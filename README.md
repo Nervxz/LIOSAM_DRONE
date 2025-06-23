@@ -2,10 +2,44 @@
 
 This guide provides comprehensive instructions for setting up and running LIO-SAM (LiDAR Inertial Odometry via Smoothing and Mapping) with SICK MultiScan 136 LiDAR and WitMotion HWT905 IMU.
 
+## Quick Start
+
+If you have Ubuntu 22.04 with ROS2 Humble already installed:
+
+```bash
+# Clone and build the project
+mkdir -p ~/lio_ws && cd ~/lio_ws
+git clone https://github.com/Nervxz/LIOSAM_DRONE.git .
+source /opt/ros/humble/setup.bash
+rosdep install --from-paths src --ignore-src -r -y
+colcon build --symlink-install
+source install/setup.bash
+
+# Run the system (3 terminals needed)
+# Terminal 1: LiDAR
+ros2 launch sick_scan_xd sick_multiscan.launch.py hostname:=169.254.83.177
+
+# Terminal 2: IMU  
+ros2 launch witmotion_ros witmotion_ros.launch.py
+
+# Terminal 3: LIO-SAM
+ros2 launch lio_sam run.launch.py
+```
+
+For detailed installation from scratch, see the full guide below.
+
 ## Table of Contents
+- [Quick Start](#quick-start)
 - [Hardware Requirements](#hardware-requirements)
 - [Software Requirements](#software-requirements)
 - [Installation](#installation)
+  - [System Prerequisites](#1-system-prerequisites)
+  - [ROS2 Installation](#2-install-ros2-humble)
+  - [Dependencies](#3-install-system-dependencies)
+  - [Workspace Setup](#5-create-workspace-and-clone-repository)
+  - [Building](#7-build-gtsam-library)
+  - [Hardware Setup](#14-hardware-setup)
+  - [Troubleshooting Build Issues](#troubleshooting-build-issues)
 - [Configuration](#configuration)
 - [Running the System](#running-the-system)
 - [Visualization in RViz](#visualization-in-rviz)
@@ -26,68 +60,330 @@ This guide provides comprehensive instructions for setting up and running LIO-SA
 
 ## Software Requirements
 
-- Ubuntu 20.04 or later
-- ROS2 Humble
-- GTSAM library
-- PCL (Point Cloud Library)
-- Eigen3
+### Operating System
+- **Ubuntu 22.04 LTS (Jammy)** - Recommended
+- **Ubuntu 20.04 LTS (Focal)** - Also supported
+- **Minimum 8GB RAM** - 16GB recommended for smooth building
+- **20GB free disk space** for complete installation
+
+### Core Dependencies
+- **ROS2 Humble** - Latest LTS version with full desktop installation
+- **GTSAM 4.1+** - Georgia Tech Smoothing and Mapping library
+- **PCL 1.10+** - Point Cloud Library for 3D data processing
+- **Eigen3 3.3+** - Linear algebra library
+- **OpenCV 4.2+** - Computer vision library
+- **Boost 1.71+** - C++ libraries collection
+
+### Build Tools
+- **CMake 3.16+** - Build system generator
+- **GCC 9+** or **Clang 10+** - C++ compiler with C++17 support
+- **Python 3.8+** - For ROS2 and build tools
+- **Colcon** - ROS2 build tool
+
+### Hardware Interface Libraries
+- **Serial communication libraries** - For WitMotion IMU
+- **Network libraries** - For SICK LiDAR Ethernet communication
+
+### Optional but Recommended
+- **RViz2** - 3D visualization (included in ros-humble-desktop)
+- **rqt tools** - ROS2 GUI tools (included in ros-humble-desktop)
+- **Plotjuggler** - Data visualization tool
+- **Foxglove Studio** - Modern robotics visualization
 
 ## Installation
 
-### 1. Install Dependencies
+This guide assumes you're starting from a fresh Ubuntu system. Follow these steps in order for a complete installation.
+
+### Estimated Time Requirements
+- **Fresh Ubuntu + ROS2 Installation**: 30-45 minutes
+- **Dependencies Installation**: 15-20 minutes
+- **Workspace Clone and Build**: 20-30 minutes (depending on hardware)
+- **Hardware Setup and Testing**: 10-15 minutes
+- **Total**: 1.5-2 hours for complete setup
+
+### 1. System Prerequisites
 
 ```bash
-# Update system
+# Update system packages
 sudo apt update && sudo apt upgrade -y
 
-# Install ROS2 dependencies
+# Install essential system tools
+sudo apt install -y \
+  curl \
+  wget \
+  gnupg2 \
+  lsb-release \
+  software-properties-common \
+  apt-transport-https \
+  ca-certificates
+```
+
+### 2. Install ROS2 Humble
+
+```bash
+# Add ROS2 GPG key
+sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+
+# Add ROS2 repository
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+# Update package index
+sudo apt update
+
+# Install ROS2 Humble Desktop
+sudo apt install -y ros-humble-desktop
+
+# Install additional ROS2 packages
 sudo apt install -y \
   ros-humble-pcl-ros \
   ros-humble-pcl-conversions \
   ros-humble-tf2-eigen \
   ros-humble-tf2-sensor-msgs \
   ros-humble-xacro \
-  ros-humble-robot-state-publisher
+  ros-humble-robot-state-publisher \
+  ros-humble-joint-state-publisher \
+  ros-humble-robot-localization \
+  ros-humble-nav2-common \
+  ros-humble-navigation2 \
+  ros-humble-nav2-bringup
 
-# Install build tools
+# Install colcon build tools
+sudo apt install -y \
+  python3-colcon-common-extensions \
+  python3-rosdep \
+  python3-vcstool
+```
+
+### 3. Install System Dependencies
+
+```bash
+# Install build tools and libraries
 sudo apt install -y \
   build-essential \
   cmake \
   git \
   libeigen3-dev \
   libboost-all-dev \
-  libtbb-dev
+  libtbb-dev \
+  libpcl-dev \
+  libopencv-dev \
+  libgoogle-glog-dev \
+  libgflags-dev \
+  libatlas-base-dev \
+  libomp-dev
+
+# Install Python dependencies
+sudo apt install -y \
+  python3-pip \
+  python3-numpy \
+  python3-matplotlib \
+  python3-yaml
+
+# Install GTSAM dependencies
+sudo apt install -y \
+  libboost-all-dev \
+  libtbb-dev \
+  libmetis-dev
 ```
 
-### 2. Build GTSAM
+### 4. Setup ROS2 Environment
 
-GTSAM is already built in the workspace. If you need to rebuild:
+```bash
+# Add ROS2 sourcing to bashrc
+echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+
+# Source ROS2 for current session
+source /opt/ros/humble/setup.bash
+
+# Initialize rosdep
+sudo rosdep init
+rosdep update
+```
+
+### 5. Create Workspace and Clone Repository
+
+```bash
+# Create workspace directory
+mkdir -p ~/lio_ws
+cd ~/lio_ws
+
+# Clone the complete LIO-SAM project
+git clone https://github.com/Nervxz/LIOSAM_DRONE.git .
+
+# Verify the structure
+ls -la
+# You should see: src/, README.md, visualize/, *.py, *.sh files
+```
+
+### 6. Install Dependencies with rosdep
+
+```bash
+# Install all ROS dependencies
+cd ~/lio_ws
+rosdep install --from-paths src --ignore-src -r -y
+```
+
+### 7. Build GTSAM Library
 
 ```bash
 cd ~/lio_ws
-colcon build --packages-select gtsam
-```
 
-### 3. Build SICK Scanner Driver
+# Build GTSAM first (required by LIO-SAM)
+colcon build --packages-select gtsam --cmake-args \
+  -DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF \
+  -DGTSAM_USE_SYSTEM_EIGEN=ON
 
-```bash
-cd ~/lio_ws
-colcon build --packages-select sick_scan_xd
-```
-
-### 4. Build WitMotion IMU Driver
-
-```bash
-cd ~/lio_ws
-colcon build --packages-select witmotion_ros
-```
-
-### 5. Build LIO-SAM
-
-```bash
-cd ~/lio_ws
-colcon build --packages-select lio_sam
+# Source the workspace
 source install/setup.bash
+```
+
+### 8. Build SICK Scanner Driver
+
+```bash
+# Build SICK scanner driver
+colcon build --packages-select sick_scan_xd
+
+# Source again after build
+source install/setup.bash
+```
+
+### 9. Build WitMotion IMU Driver
+
+```bash
+# Build WitMotion IMU driver  
+colcon build --packages-select witmotion_ros
+
+# Source again after build
+source install/setup.bash
+```
+
+### 10. Build LIO-SAM
+
+```bash
+# Build LIO-SAM package
+colcon build --packages-select lio_sam
+
+# Final sourcing
+source install/setup.bash
+```
+
+### 11. Build All Packages (Alternative)
+
+If you prefer to build everything at once:
+
+```bash
+cd ~/lio_ws
+
+# Build all packages in dependency order
+colcon build --symlink-install --cmake-args \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF \
+  -DGTSAM_USE_SYSTEM_EIGEN=ON
+
+# Source the complete workspace
+source install/setup.bash
+```
+
+### 12. Verify Installation
+
+```bash
+# Check if all packages built successfully
+colcon list
+
+# Verify ROS2 can find the packages
+ros2 pkg list | grep -E "(lio_sam|sick_scan|witmotion)"
+
+# Should show:
+# lio_sam
+# sick_scan_xd  
+# witmotion_ros
+```
+
+### 13. Setup Auto-sourcing (Recommended)
+
+```bash
+# Add workspace sourcing to bashrc
+echo "source ~/lio_ws/install/setup.bash" >> ~/.bashrc
+
+# Source for current session
+source ~/.bashrc
+```
+
+### 14. Hardware Setup
+
+#### SICK MultiScan 136 LiDAR Setup
+```bash
+# Configure network interface for LiDAR
+sudo ip addr add 169.254.148.106/16 dev eth0  # Replace eth0 with your interface
+
+# Test connection
+ping 169.254.83.177
+# Should get replies if LiDAR is connected
+```
+
+#### WitMotion IMU Setup
+```bash
+# Check if IMU is detected
+ls -la /dev/ttyUSB*
+
+# Set permissions (may need to run after each reboot)
+sudo chmod 666 /dev/ttyUSB0
+
+# Add user to dialout group (permanent solution)
+sudo usermod -a -G dialout $USER
+# Log out and back in for this to take effect
+```
+
+### 15. Build Verification Test
+
+```bash
+# Quick test to verify everything works
+cd ~/lio_ws
+
+# Test SICK scanner launch file exists
+ls install/sick_scan_xd/share/sick_scan_xd/launch/sick_multiscan.launch.py
+
+# Test LIO-SAM launch file exists  
+ls install/lio_sam/share/lio_sam/launch/run.launch.py
+
+# Test WitMotion launch file exists
+ls install/witmotion_ros/share/witmotion_ros/launch/witmotion_ros.launch.py
+
+# All should exist if build was successful
+```
+
+### Troubleshooting Build Issues
+
+#### Common Build Errors and Solutions:
+
+**GTSAM Build Error:**
+```bash
+# If GTSAM fails to build, try:
+sudo apt install -y libtbb-dev libmetis-dev
+cd ~/lio_ws
+rm -rf build/ install/ log/
+colcon build --packages-select gtsam --cmake-args -DGTSAM_USE_SYSTEM_EIGEN=ON
+```
+
+**Missing Dependencies:**
+```bash
+# If you get missing package errors:
+sudo apt update
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
+```
+
+**Permission Errors:**
+```bash
+# If you get permission errors:
+sudo chown -R $USER:$USER ~/lio_ws
+```
+
+**Build Memory Issues:**
+```bash
+# If build fails due to memory (common on systems with <8GB RAM):
+colcon build --parallel-workers 1 --packages-select gtsam
+colcon build --parallel-workers 2  # For other packages
 ```
 
 ## Configuration
