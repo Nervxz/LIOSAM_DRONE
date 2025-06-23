@@ -17,10 +17,12 @@ source install/setup.bash
 
 # Run the system (3 terminals needed)
 # Terminal 1: LiDAR
-ros2 launch sick_scan_xd sick_multiscan.launch.py hostname:=169.254.83.177
+ros2 launch sick_scan_xd sick_multiscan.launch.py hostname:=192.168.31.240 udp_receiver_ip:=192.168.31.146 #hostname= lidar ip; udp_ip= received ip
+# Or use the convenience script:
+./run_lidar.sh
 
 # Terminal 2: IMU  
-ros2 launch witmotion_ros witmotion_ros.launch.py
+ros2 launch witmotion_ros final_demo.launch.py
 
 # Terminal 3: LIO-SAM
 ros2 launch lio_sam run.launch.py
@@ -49,8 +51,8 @@ For detailed installation from scratch, see the full guide below.
 ## Hardware Requirements
 
 - **LiDAR**: SICK MultiScan 136
-  - IP Address: 169.254.83.177
-  - UDP Address: 169.254.148.106
+  - IP Address: 192.168.31.240
+  - UDP Receiver IP: 192.168.31.146
   - Data Rate: ~7.5 Hz
   
 - **IMU**: WitMotion HWT905
@@ -314,10 +316,10 @@ source ~/.bashrc
 #### SICK MultiScan 136 LiDAR Setup
 ```bash
 # Configure network interface for LiDAR
-sudo ip addr add 169.254.148.106/16 dev eth0  # Replace eth0 with your interface
+sudo ip addr add 192.168.31.146/24 dev eth0  # Replace eth0 with your interface
 
 # Test connection
-ping 169.254.83.177
+ping 192.168.31.240
 # Should get replies if LiDAR is connected
 ```
 
@@ -347,7 +349,7 @@ ls install/sick_scan_xd/share/sick_scan_xd/launch/sick_multiscan.launch.py
 ls install/lio_sam/share/lio_sam/launch/run.launch.py
 
 # Test WitMotion launch file exists
-ls install/witmotion_ros/share/witmotion_ros/launch/witmotion_ros.launch.py
+ls ros2_imu/witmotion_ros/launch/final_demo.launch.py
 
 # All should exist if build was successful
 ```
@@ -440,12 +442,45 @@ The SICK scanner uses the following launch file:
 ```
 
 Default parameters work well, but ensure:
-- Hostname: 169.254.83.177
+- Hostname: 192.168.31.240
+- UDP Receiver IP: 192.168.31.146
 - Cloud topic: `/cloud_all_fields_fullframe`
+
+You can also use the convenience script for launching:
+```bash
+./run_lidar.sh
+```
 
 ### 3. WitMotion IMU Configuration
 
-The IMU publishes to `/imu/data` by default. No additional configuration needed.
+The IMU uses a custom launch file located at:
+```
+~/lio_ws/ros2_imu/witmotion_ros/launch/final_demo.launch.py
+```
+
+This launch file publishes to `/imu/data` by default. No additional configuration needed.
+
+### 4. Convenience Scripts
+
+For easier system startup, use these convenience scripts:
+
+**LiDAR Launch Script:**
+```bash
+./run_lidar.sh
+```
+This script automatically launches the SICK scanner with the correct network parameters.
+
+**Manual Launch Commands:**
+```bash
+# LiDAR (full command)
+ros2 launch sick_scan_xd sick_multiscan.launch.py hostname:=192.168.31.240 udp_receiver_ip:=192.168.31.146
+
+# IMU (custom launch file)
+ros2 launch witmotion_ros final_demo.launch.py
+
+# LIO-SAM (standard launch)
+ros2 launch lio_sam run.launch.py
+```
 
 ## Running the System
 
@@ -459,13 +494,17 @@ source install/setup.bash
 
 #### 2. Launch SICK LiDAR Scanner
 ```bash
-ros2 launch sick_scan_xd sick_multiscan.launch.py hostname:=169.254.83.177
+ros2 launch sick_scan_xd sick_multiscan.launch.py hostname:=192.168.31.240 udp_receiver_ip:=192.168.31.146
+```
+Or use the convenience script:
+```bash
+./run_lidar.sh
 ```
 Wait for "Startup sequence completed" message.
 
 #### 3. Launch WitMotion IMU
 ```bash
-ros2 launch witmotion_ros witmotion_ros.launch.py
+ros2 launch witmotion_ros final_demo.launch.py
 ```
 Verify IMU is publishing at 200 Hz.
 
@@ -557,7 +596,7 @@ sudo pkill -f witmotion
 #### 2. LiDAR Connection Failed
 ```bash
 # Test network connection
-ping 169.254.83.177
+ping 192.168.31.240
 
 # Check network interface
 ip addr show
