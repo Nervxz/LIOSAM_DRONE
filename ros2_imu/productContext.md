@@ -1,0 +1,1 @@
+# Product Context\n\n## Purpose\nThe ROS2 IMU project aims to provide a reliable and efficient interface for IMU data within the ROS2 ecosystem.\n\n## Problems Solved\n- Lack of standardized IMU data handling in ROS2.\n- Difficulty in integrating various IMU hardware.\n\n## User Experience Goals\n- Easy integration for developers.\n- Clear documentation and examples.
