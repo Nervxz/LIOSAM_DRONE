@@ -722,4 +722,3 @@ This integration uses:
 - WitMotion ROS Driver: MIT License
 
 ---
-Last Updated: December 2024 
