@@ -1,0 +1,8 @@
+nerv@nerv:~/lio_ws/src/LIOSAM_DRONE/ros2_imu$ ros2 launch witmotion_ros final_demo.launch.py
+nerv@nerv:~/lio_ws/src/LIOSAM_DRONE/sick_scan_ws$ bash run_lidar.sh 
+nerv@nerv:~/lio_ws$ cd /home/nerv/lio_ws && . install/setup.bash 
+nerv@nerv:~/lio_ws$ cd /home/nerv/lio_ws && ros2 launch lio_sam run.launch.py
+
+
+
+cd /home/nerv/lio_ws && source /opt/ros/humble/setup.bash && python3 auto_calibrate_and_apply.py

@@ -1,0 +1,16 @@
+digraph G {
+"base_link" -> "compass"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"odom" -> "base_link"[label=" Broadcaster: default_authority\nAverage rate: 106.554\nBuffer length: 1.999\nMost recent transform: 1749613398.80274\nOldest transform: 1749613396.803758\n"];
+"odom" -> "lidar_link"[label=" Broadcaster: default_authority\nAverage rate: 4.444\nBuffer length: 2.25\nMost recent transform: 1749613398.495407\nOldest transform: 1749613396.24496\n"];
+"world" -> "odom"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"map" -> "world"[label=" Broadcaster: default_authority\nAverage rate: 10.218\nBuffer length: 4.208\nMost recent transform: 1749613398.737429\nOldest transform: 1749613394.529135\n"];
+"base_link" -> "chassis_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"chassis_link" -> "imu_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"imu_link" -> "laser_sensor_frame"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"chassis_link" -> "navsat_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"base_link" -> "imu"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1749613398.8148346"[ shape=plaintext ] ;
+}->"map";
+}
